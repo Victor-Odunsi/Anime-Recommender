@@ -1,0 +1,14 @@
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Ignore python cache
+__pycache__/
+*.pyc
+
+# Ignore Virtual envirionment
+animerec-env/
+
+# Ignore data and artifacts
+artifacts/
+*.csv
+*.pkl
