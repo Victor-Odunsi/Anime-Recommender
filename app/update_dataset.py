@@ -15,11 +15,9 @@ logging.basicConfig(filename = 'app.log', level=logging.INFO)
 
 Base_dir = Path(__file__).resolve().parent.parent
 
-DATA_DIR = os.getenv('DATA_DIR', Base_dir / 'artifacts')
-
-DATA_PATH = DATA_DIR / 'anime_data.csv'
-SIM_PATH = DATA_DIR / 'similarity_matrix.npy'
-TRENDING_PATH = DATA_DIR / 'trending_df.csv'
+DATA_PATH = Base_dir / 'artifacts' / 'anime_data.csv'
+SIM_PATH = Base_dir / 'artifacts' / 'similarity_matrix.pkl'
+TRENDING_PATH = Base_dir / 'artifacts' / 'trending_df.csv'
 
 def update_dataset():
     try:
@@ -128,35 +126,8 @@ def compute_similalrity_matrix():
 
     similarity = cosine_similarity(feature_matrix)
 
-    np.save(SIM_PATH, similarity.astype("float32"))
+    with open(SIM_PATH, 'wb') as f:
+        pickle.dump(similarity, f)
     logging.info(
         f"Similarity matrix computed and saved today {datetime.now().strftime("%d-%m-%Y")}."
         )
-
-
-HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
-
-def push_to_huggingface():
-    api = HfApi()
-    token = os.getenv("HF_TOKEN")
-
-    files_to_upload = {
-        "anime_data.csv": DATA_DIR,
-        "trending_df.csv": TRENDING_PATH,
-        "similarity_matrix.npy": SIM_PATH,
-    }
-
-    for filename, filepath in files_to_upload.items():
-        upload_file(
-            path_or_fileobj=str(filepath),
-            path_in_repo=filename,
-            repo_id=HF_DATASET_REPO,
-            repo_type="dataset",
-            token=token,
-        )
-        logging.info(f"Pushed {filename} to Hugging Face dataset repo")
-
-if __name__ == "__main__":
-    update_dataset()
-    compute_similalrity_matrix()
-    push_to_huggingface()
