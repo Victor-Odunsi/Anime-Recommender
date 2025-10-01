@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
 import pickle
 from pathlib import Path
 import requests
@@ -163,29 +165,28 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-Base_dir = Path(__file__).resolve().parent.parent
 
-data_path = Base_dir / 'artifacts' / 'anime_data.csv'
-sim_path = Base_dir / 'artifacts' / 'similarity_matrix.pkl'
-trending_path = Base_dir / 'artifacts' / 'trending_df.csv'
+PROJECT_ROOT = Path(__file__).resolve().parents[1] 
+
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+
+data_path = ARTIFACTS_DIR / "anime_data.csv"
+sim_path = ARTIFACTS_DIR / "similarity_matrix.npy"
+trending_path = ARTIFACTS_DIR / "trending_df.csv"
+
 
 @st.cache_data
 def _get_anime_data():
-    with open(data_path, 'rb') as f:
-        anime_data = pickle.load(f)
-    return anime_data
+    return pd.read_csv(data_path)
 
 @st.cache_data
-def _get_similaity_matrix():
-    with open(sim_path, 'rb') as f:
-        similarity = pickle.load(f)
+def _get_similarity_matrix():
+    similarity = np.load(sim_path, allow_pickle=True)
     return similarity
 
 @st.cache_data
 def _get_trending_anime():
-    with open(trending_path, 'rb') as f:
-        trending = pickle.load(f)
-    return trending
+    return pd.read_csv(trending_path)
 
 @st.cache_resource
 def _load_image(url: str):
@@ -195,7 +196,7 @@ def _load_image(url: str):
 
 trending_df = _get_trending_anime()
 anime_data = _get_anime_data()
-similarity = _get_similaity_matrix()
+similarity = _get_similarity_matrix()
 
 def recommend(anime):
     anime_index = anime_data[anime_data['name'] == search_query].index[0].item()

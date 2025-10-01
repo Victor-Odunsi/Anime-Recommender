@@ -1,5 +1,6 @@
 import pickle
 import pandas as pd
+import numpy as np
 import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -14,7 +15,7 @@ logging.basicConfig(filename = 'app.log', level=logging.INFO)
 Base_dir = Path(__file__).resolve().parent.parent
 
 DATA_PATH = Base_dir / 'artifacts' / 'anime_data.csv'
-SIM_PATH = Base_dir / 'artifacts' / 'similarity_matrix.pkl'
+SIM_PATH = Base_dir / 'artifacts' / 'similarity_matrix.npy'
 TRENDING_PATH = Base_dir / 'artifacts' / 'trending_df.csv'
 
 def update_dataset():
@@ -63,15 +64,12 @@ def update_dataset():
 
     trending_df = new_df.sort_values(by='score', ascending=False).head()
     
-    with open(DATA_PATH, 'wb') as f:
-        pickle.dump(combined_df, f)
+    combined_df.to_csv(DATA_PATH, index=False)
     logging.info(
         f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime("%d-%m-%Y")}."
          "Total entries: {len(combined_df)}"
         )
-
-    with open(TRENDING_PATH, 'wb') as f:
-        pickle.dump(trending_df, f)
+    trending_df.to_csv(TRENDING_PATH, index=False)
     logging.info(f"Trending dataset updated today {datetime.now().strftime("%d-%m-%Y")}.")
 
 
@@ -93,8 +91,7 @@ def compute_similalrity_matrix():
         logging.error("Data file not found. Please run update_dataset first.")
         return
     
-    with open(DATA_PATH, 'rb') as f:
-        anime_data = pickle.load(f)
+    anime_data = pd.read_csv(DATA_PATH)
 
     selected_features = [
         'genres',
@@ -128,8 +125,11 @@ def compute_similalrity_matrix():
 
     similarity = cosine_similarity(feature_matrix)
 
-    with open(SIM_PATH, 'wb') as f:
-        pickle.dump(similarity, f)
+    np.save(SIM_PATH, similarity)
     logging.info(
         f"Similarity matrix computed and saved today {datetime.now().strftime("%d-%m-%Y")}."
         )
+    
+
+update_dataset()
+compute_similalrity_matrix()
