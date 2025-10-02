@@ -125,7 +125,7 @@ def compute_similalrity_matrix():
 
     similarity = cosine_similarity(feature_matrix)
 
-    np.save(SIM_PATH, similarity)
+    np.save(SIM_PATH, similarity.astype("float32"))
     logging.info(
         f"Similarity matrix computed and saved today {datetime.now().strftime("%d-%m-%Y")}."
         )

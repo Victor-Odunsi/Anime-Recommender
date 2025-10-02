@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+import pickle, os
 from pathlib import Path
 import requests
 from io import BytesIO
@@ -166,13 +166,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1] 
+Base_dir = Path(__file__).resolve().parent.parent
 
-ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+DATA_DIR = os.getenv('DATA_DIR', Base_dir / 'artifacts')
 
-data_path = ARTIFACTS_DIR / "anime_data.csv"
-sim_path = ARTIFACTS_DIR / "similarity_matrix.npy"
-trending_path = ARTIFACTS_DIR / "trending_df.csv"
+data_path = DATA_DIR / "anime_data.csv"
+sim_path = DATA_DIR / "similarity_matrix.npy"
+trending_path = DATA_DIR / "trending_df.csv"
 
 
 @st.cache_data
