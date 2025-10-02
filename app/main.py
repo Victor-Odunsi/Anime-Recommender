@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 from io import BytesIO
 from PIL import Image
+from huggingface_hub import hf_hub_download
 
 # Page configuration
 st.set_page_config(
@@ -166,14 +167,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-Base_dir = Path(__file__).resolve().parent.parent
+HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
 
-DATA_DIR = os.getenv('DATA_DIR', Base_dir / 'artifacts')
-
-data_path = DATA_DIR / "anime_data.csv"
-sim_path = DATA_DIR / "similarity_matrix.npy"
-trending_path = DATA_DIR / "trending_df.csv"
-
+data_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="anime_data.csv", repo_type="dataset")
+sim_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="similarity_matrix.npy", repo_type="dataset")
+trending_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="trending_df.csv", repo_type="dataset")
 
 @st.cache_data
 def _get_anime_data():
