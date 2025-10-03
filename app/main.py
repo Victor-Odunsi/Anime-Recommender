@@ -167,10 +167,10 @@ st.markdown("""
 
 
 HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
-HF_TOKEN = os.getenv("HF_TOKEN")  # Make sure this is set in Render
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 if HF_TOKEN is None:
-    raise ValueError("❌ HF_TOKEN not found! Please set it in Render environment variables.")
+    print("❌ HF_TOKEN not found! Falling back to public access...")
 
 # --- Artifact fetch with logging ---
 print("📥 Fetching artifacts from Hugging Face...")
@@ -180,7 +180,7 @@ try:
         repo_id=HF_DATASET_REPO,
         filename="anime_data.csv",
         repo_type="dataset",
-        token=HF_TOKEN,
+        token=HF_TOKEN if HF_TOKEN else None,
     )
     print(f"✅ Downloaded anime_data.csv -> {data_path}")
 
@@ -188,7 +188,7 @@ try:
         repo_id=HF_DATASET_REPO,
         filename="similarity_matrix.npy",
         repo_type="dataset",
-        token=HF_TOKEN,
+        token=HF_TOKEN if HF_TOKEN else None,
     )
     print(f"✅ Downloaded similarity_matrix.npy -> {sim_path}")
 
@@ -196,7 +196,7 @@ try:
         repo_id=HF_DATASET_REPO,
         filename="trending_df.csv",
         repo_type="dataset",
-        token=HF_TOKEN,
+        token=HF_TOKEN if HF_TOKEN else None,
     )
     print(f"✅ Downloaded trending_df.csv -> {trending_path}")
 
