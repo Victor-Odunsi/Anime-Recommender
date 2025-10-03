@@ -155,7 +155,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # Header section
 st.markdown("""
 <div class="title-container">
@@ -168,10 +167,26 @@ st.markdown("""
 
 
 HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
+token = os.getenv("HF_TOKEN")
 
-data_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="anime_data.csv", repo_type="dataset")
-sim_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="similarity_matrix.npy", repo_type="dataset")
-trending_path = hf_hub_download(repo_id=HF_DATASET_REPO, filename="trending_df.csv", repo_type="dataset")
+data_path = hf_hub_download(
+    repo_id=HF_DATASET_REPO, 
+    filename="anime_data.csv", 
+    repo_type="dataset",
+    token = token
+)
+sim_path = hf_hub_download(
+    repo_id=HF_DATASET_REPO, 
+    filename="similarity_matrix.npy", 
+    repo_type="dataset",
+    token = token
+)
+trending_path = hf_hub_download(
+    repo_id=HF_DATASET_REPO,
+    filename="trending_df.csv", 
+    repo_type="dataset",
+    token = token
+)
 
 @st.cache_data
 def _get_anime_data():
