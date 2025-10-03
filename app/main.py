@@ -167,27 +167,45 @@ st.markdown("""
 
 
 HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
-token = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN")  # Make sure this is set in Render
 
-data_path = hf_hub_download(
-    repo_id=HF_DATASET_REPO, 
-    filename="anime_data.csv", 
-    repo_type="dataset",
-    token = token
-)
-sim_path = hf_hub_download(
-    repo_id=HF_DATASET_REPO, 
-    filename="similarity_matrix.npy", 
-    repo_type="dataset",
-    token = token
-)
-trending_path = hf_hub_download(
-    repo_id=HF_DATASET_REPO,
-    filename="trending_df.csv", 
-    repo_type="dataset",
-    token = token
-)
+if HF_TOKEN is None:
+    raise ValueError("❌ HF_TOKEN not found! Please set it in Render environment variables.")
 
+# --- Artifact fetch with logging ---
+print("📥 Fetching artifacts from Hugging Face...")
+
+try:
+    data_path = hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename="anime_data.csv",
+        repo_type="dataset",
+        token=HF_TOKEN,
+    )
+    print(f"✅ Downloaded anime_data.csv -> {data_path}")
+
+    sim_path = hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename="similarity_matrix.npy",
+        repo_type="dataset",
+        token=HF_TOKEN,
+    )
+    print(f"✅ Downloaded similarity_matrix.npy -> {sim_path}")
+
+    trending_path = hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename="trending_df.csv",
+        repo_type="dataset",
+        token=HF_TOKEN,
+    )
+    print(f"✅ Downloaded trending_df.csv -> {trending_path}")
+
+except Exception as e:
+    print("❌ Failed to fetch from Hugging Face:", e)
+    raise
+
+print("📥 Fetching anime_data.csv from Hugging Face...")
+print(f"Resolved path: {data_path}")
 @st.cache_data
 def _get_anime_data():
     return pd.read_csv(data_path)
