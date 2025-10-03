@@ -204,19 +204,20 @@ except Exception as e:
     print("❌ Failed to fetch from Hugging Face:", e)
     raise
 
-print("📥 Fetching anime_data.csv from Hugging Face...")
-print(f"Resolved path: {data_path}")
-@st.cache_data
+# @st.cache_data
 def _get_anime_data():
+    print(">>> Fetching anime_data.csv from HF...")
     return pd.read_csv(data_path)
 
-@st.cache_data
+# @st.cache_data
 def _get_similarity_matrix():
+    print(">>> Fetching similarity_matrix.npy from HF...")
     similarity = np.load(sim_path, allow_pickle=True)
     return similarity
 
-@st.cache_data
+# @st.cache_data
 def _get_trending_anime():
+    print(">>> Fetching trending_df.csv from HF...")
     return pd.read_csv(trending_path)
 
 @st.cache_resource
@@ -251,8 +252,6 @@ def recommend(anime):
     recommended_anime_urls = [c['anime_url'] for c in candidates]
 
     return recommended_anime_names, recommended_anime_posters, recommended_anime_urls
-
-# Search section
 
 anime_list = anime_data['name'].values
 
