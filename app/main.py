@@ -6,7 +6,7 @@ from pathlib import Path
 import requests
 from io import BytesIO
 from PIL import Image
-from huggingface_hub import hf_hub_download
+from fetch_from_hf import get_anime_data, get_similarity_matrix, get_trending_anime
 
 # Page configuration
 st.set_page_config(
@@ -166,19 +166,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-BASE_PATH = "/data"
-
 @st.cache_data
 def _get_anime_data():
-    return pd.read_csv(f"{BASE_PATH}/anime_data.csv")
+    return get_anime_data()
 
 @st.cache_data
 def _get_similarity_matrix():
-    return np.load(f"{BASE_PATH}/similarity_matrix.npy", allow_pickle=True)
+    return get_similarity_matrix()
 
-@st.cache_data
 def _get_trending_anime():
-    return pd.read_csv(f"{BASE_PATH}/trending_df.csv")
+    return get_trending_anime()
 
 @st.cache_resource
 def _load_image(url: str):
