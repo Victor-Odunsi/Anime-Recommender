@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 
 # Base URL for raw Hugging Face file access
-HF_BASE = "https://huggingface.co/datasets/victor-odunsi/anime-recommender-artifacts/resolve/main/"
+HF_BASE = "https://huggingface.co/datasets/victor-odunsi/anime-recommender-artifacts/resolve/main"
 CACHE_DIR = "/tmp/anime_recommender"  # ✅ writable on Render free tier
 
 # Ensure cache directory exists
