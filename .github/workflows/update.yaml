@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
+        with:
+          ref: prod   # <-- use prod branch explicitly
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -22,7 +24,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run update script
-        run: python app/update_dataset.py
+        run: python app/update_dataset.py   # this runs the prod branch version
 
       - name: Upload artifacts to Hugging Face
         env:
