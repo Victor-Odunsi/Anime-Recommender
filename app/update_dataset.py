@@ -7,15 +7,21 @@ from pathlib import Path
 import logging, re, os, pickle
 from nltk.stem import PorterStemmer
 from datetime import datetime
+from io import BytesIO
+from huggingface_hub import upload_file
 
 logging.basicConfig(filename='app.log', level=logging.INFO)
 
 # Persistent path
-BASE_PATH = Path("/data")
+BASE_PATH = Path("artifacts")
+BASE_PATH.mkdir(exist_ok=True)
+HF_DATA_BASE = "https://huggingface.co/datasets/victor-odunsi/anime-recommender-artifacts/resolve/main"
+HF_REPO = "victor-odunsi/anime-recommender-artifacts"
+HF_TOKEN = os.getenv("HF_TOKEN")  
 
 DATA_PATH = BASE_PATH / "anime_data.csv"
-SIM_PATH = BASE_PATH / "similarity_matrix.npy"
 TRENDING_PATH = BASE_PATH / "trending_df.csv"
+MATRIX_PATH = BASE_PATH / "similarity_matrix.csv"
 
 def update_dataset():
     try:
@@ -45,14 +51,19 @@ def update_dataset():
             'episodes': item.get("episodes", None),
             'producers': " ".join([p["name"] for p in item.get("producers", [])]),
             'source': item.get("source", ""),
+            'combined_features': ""
         })
 
     new_df = pd.DataFrame(new_anime_list)
 
-    if DATA_PATH.exists():
-        existing_df = pd.read_csv(DATA_PATH)
-    else:
-        existing_df = pd.DataFrame()
+    def _load_existing_data():
+        url = HF_DATA_BASE
+        response = requests.get(url)
+        response.raise_for_status()
+        return BytesIO(response.content)
+
+    file_path = _load_existing_data()
+    existing_df = pd.read_csv(file_path)
 
     combined_df = (
         pd.concat([existing_df, new_df])
@@ -70,6 +81,8 @@ def update_dataset():
         f" Total entries: {len(combined_df)}"
     )
 
+    return combined_df
+
 def _preprocess(text):
     if not isinstance(text, str):
         return ""
@@ -81,31 +94,53 @@ def _preprocess(text):
     text = " ".join(ps.stem(word) for word in text.split())
     return text
 
-def compute_similarity_matrix():
-    if not DATA_PATH.exists():
-        logging.error("Data file not found. Please run update_dataset first.")
-        return
-    
-    anime_data = pd.read_csv(DATA_PATH)
-    anime_data = anime_data.fillna("")
-
-    anime_data['combined_features'] = (
-        anime_data['themes'] + " " +
-        anime_data['demographics'] + " " +
-        anime_data['synopsis'] + " " +
-        anime_data['type'] + " " +
-        anime_data['producers'] + " " +
-        anime_data['source']
+def compute_recommendations(df: pd.DataFrame):
+    """Compute nearest neighbors and save as CSV"""
+    df = df.fillna("")
+    df['combined_features'] = (
+        df['themes'] + " " +
+        df['demographics'] + " " +
+        df['synopsis'] + " " +
+        df['type'] + " " +
+        df['producers'] + " " +
+        df['source']
     ).apply(_preprocess)
 
     tfidf = TfidfVectorizer(stop_words='english')
-    feature_matrix = tfidf.fit_transform(anime_data['combined_features'])
+    feature_matrix = tfidf.fit_transform(df['combined_features'])
 
     similarity = cosine_similarity(feature_matrix)
 
-    np.save(SIM_PATH, similarity)
+    anime_dict = {}
+    for i in range(similarity.shape[0]):
+        top_idx = np.argsort(similarity[i])[-11:][::-1]
+        top_idx = [idx for idx in top_idx if idx != i]
+        anime_dict[i] = top_idx[:10]
+
+    recs_df = pd.DataFrame.from_dict(anime_dict, orient='index')
+    recs_df.to_csv(MATRIX_PATH, index=False)
+
+    logging.info(f"Recommendations precomputed on {datetime.now().strftime('%d-%m-%Y')}.")
+
+
+def upload_to_hf():
+    """Upload CSVs to Hugging Face dataset repo"""
+    files = [DATA_PATH, TRENDING_PATH, MATRIX_PATH]
+
+    for f in files:
+        print(f"⬆️ Uploading {f} to {HF_REPO}...")
+        upload_file(
+            path_or_fileobj=str(f),
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            token=HF_TOKEN
+        )
+    print("✅ All files uploaded successfully!")
+
     logging.info(f"Similarity matrix computed and saved today {datetime.now().strftime('%d-%m-%Y')}.")
 
 if __name__ == "__main__":
-    update_dataset()
-    compute_similarity_matrix()
+    df = update_dataset()
+    if df is not None:
+        compute_recommendations(df)
+        upload_to_hf()

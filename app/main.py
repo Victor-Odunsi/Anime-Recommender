@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 from io import BytesIO
 from PIL import Image
+import time
 from fetch_from_hf import get_anime_data, get_similarity_matrix, get_trending_anime
 
 # Page configuration
@@ -174,6 +175,7 @@ def _get_anime_data():
 def _get_similarity_matrix():
     return get_similarity_matrix()
 
+@st.cache_data
 def _get_trending_anime():
     return get_trending_anime()
 
@@ -185,22 +187,22 @@ def _load_image(url: str):
 # Load artifacts
 trending_df = _get_trending_anime()
 anime_data = _get_anime_data()
-similarity = _get_similarity_matrix()
+similarity_df = _get_similarity_matrix()
 
 def recommend(anime):
-    anime_index = anime_data[anime_data['name'] == search_query].index[0].item()
-    distances = list(enumerate(similarity[anime_index]))
-    sorted_distances = sorted(distances, reverse=True, key=lambda x: x[1])
+    anime_index = anime_data[anime_data['name'] == anime].index[0]
+    neighbor_ids = similarity_df.loc[anime_index].dropna().astype(int).tolist()
 
     candidates = []
-    for i in sorted_distances[1:9]:
-        idx = i[0]
-        candidates.append({
-            'name': anime_data.iloc[idx]['name'],
-            'poster_url': anime_data.iloc[idx]['image_url'],
-            'anime_url': anime_data.iloc[idx]['anime_url'],
-            'score': anime_data.iloc[idx]['score'],
-        })
+    for idx in neighbor_ids[:8]:  # Limit to top 8 recommendations
+        candidates.append(
+            {
+                'name': anime_data.iloc[idx]['name'],
+                'poster_url': anime_data.iloc[idx]['image_url'],
+                'anime_url': anime_data.iloc[idx]['anime_url'],
+                'score': anime_data.iloc[idx]['score']
+            }
+        )
     
     candidates = sorted(candidates, reverse=True, key=lambda x: x['score'])
 
@@ -219,6 +221,8 @@ search_query = st.selectbox(
 
 if st.button("✨ Get Recommendations"):
     with st.spinner('Finding the best matches for you...'):
+        time.sleep(2)  # ⏳ Add artificial delay (1–2 seconds)
+
         recommended_names, recommended_posters, recommended_urls = recommend(search_query)
         
         cols = st.columns(len(recommended_names))
@@ -228,7 +232,7 @@ if st.button("✨ Get Recommendations"):
                     recommended_posters[idx],
                     use_container_width=True,
                     caption=recommended_names[idx]
-                    )
+                )
                 col.markdown(
                     f"""
                     <a href="{recommended_urls[idx]}" target="_blank">
@@ -239,6 +243,7 @@ if st.button("✨ Get Recommendations"):
                     """,
                     unsafe_allow_html=True
                 )
+
 
 st.subheader("🔥 Trending Anime Right Now")
 cols = st.columns(len(trending_df))
