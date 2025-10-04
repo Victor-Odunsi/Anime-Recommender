@@ -1,23 +1,21 @@
-import pickle
 import pandas as pd
 import numpy as np
 import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from pathlib import Path
-import logging
-import re, os
+import logging, re, os, pickle
 from nltk.stem import PorterStemmer
 from datetime import datetime
-from huggingface_hub import HfApi, HfFolder, upload_file
 
-logging.basicConfig(filename = 'app.log', level=logging.INFO)
+logging.basicConfig(filename='app.log', level=logging.INFO)
 
-Base_dir = Path(__file__).resolve().parent.parent
+# Persistent path
+BASE_PATH = Path("/data")
 
-DATA_PATH = Base_dir / 'artifacts' / 'anime_data.csv'
-SIM_PATH = Base_dir / 'artifacts' / 'similarity_matrix.pkl'
-TRENDING_PATH = Base_dir / 'artifacts' / 'trending_df.csv'
+DATA_PATH = BASE_PATH / "anime_data.csv"
+SIM_PATH = BASE_PATH / "similarity_matrix.npy"
+TRENDING_PATH = BASE_PATH / "trending_df.csv"
 
 def update_dataset():
     try:
@@ -40,16 +38,15 @@ def update_dataset():
             'image_url': item['images']['jpg']['image_url'],
             'name': item['title'],
             'score': item.get('score', None),
-            'themes': [t["name"] for t in item.get("themes", [])],
-            'demographics': [d["name"] for d in item.get("demographics", [])],
+            'themes': " ".join([t["name"] for t in item.get("themes", [])]),
+            'demographics': " ".join([d["name"] for d in item.get("demographics", [])]),
             'synopsis': item.get('synopsis', ''),
             'type': item.get('type', ''),
             'episodes': item.get("episodes", None),
-            'producers': [p["name"] for p in item.get("producers", [])],
+            'producers': " ".join([p["name"] for p in item.get("producers", [])]),
             'source': item.get("source", ""),
-            'combined_features': None
         })
-    
+
     new_df = pd.DataFrame(new_anime_list)
 
     if DATA_PATH.exists():
@@ -64,70 +61,51 @@ def update_dataset():
     )
 
     trending_df = new_df.sort_values(by='score', ascending=False).head()
-    
-    combined_df.to_csv(DATA_PATH, index=False)
-    logging.info(
-        f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime("%d-%m-%Y")}."
-         "Total entries: {len(combined_df)}"
-        )
-    trending_df.to_csv(TRENDING_PATH, index=False)
-    logging.info(f"Trending dataset updated today {datetime.now().strftime("%d-%m-%Y")}.")
 
+    combined_df.to_csv(DATA_PATH, index=False)
+    trending_df.to_csv(TRENDING_PATH, index=False)
+
+    logging.info(
+        f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime('%d-%m-%Y')}."
+        f" Total entries: {len(combined_df)}"
+    )
 
 def _preprocess(text):
-        if not isinstance(text, str):
-            return ""
-        ps = PorterStemmer()
-        text = text.lower()
-        text = re.sub(r'\[.*?\]', '', text)
-        text = re.sub(r'\s+', ' ', text)
-        text = re.sub(r'\n', '', text)
-        text = " ".join(ps.stem(word) for word in text.split())
-        
-        return text
+    if not isinstance(text, str):
+        return ""
+    ps = PorterStemmer()
+    text = text.lower()
+    text = re.sub(r'\[.*?\]', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'\n', '', text)
+    text = " ".join(ps.stem(word) for word in text.split())
+    return text
 
-def compute_similalrity_matrix():
-
+def compute_similarity_matrix():
     if not DATA_PATH.exists():
         logging.error("Data file not found. Please run update_dataset first.")
         return
     
     anime_data = pd.read_csv(DATA_PATH)
-
-    selected_features = [
-        'genres',
-        'themes', 
-        'demographics', 
-        'synopsis', 
-        'type',
-        'producers', 
-        'source'
-    ]
-    for feature in selected_features:
-        anime_data[feature] = anime_data[feature].fillna('')
+    anime_data = anime_data.fillna("")
 
     anime_data['combined_features'] = (
-        anime_data['genres'] + ' ' +
-        anime_data['themes'] + ' ' +
-        anime_data['demographics'] + ' ' +
-        anime_data['synopsis'] + ' ' +
-        anime_data['type'] + ' ' +
-        anime_data['producers'] + ' ' +
+        anime_data['themes'] + " " +
+        anime_data['demographics'] + " " +
+        anime_data['synopsis'] + " " +
+        anime_data['type'] + " " +
+        anime_data['producers'] + " " +
         anime_data['source']
-    )
+    ).apply(_preprocess)
 
-    anime_data['combined_features'] = (
-        anime_data['combined_features']
-        .apply(_preprocess)
-    )
- 
     tfidf = TfidfVectorizer(stop_words='english')
     feature_matrix = tfidf.fit_transform(anime_data['combined_features'])
 
     similarity = cosine_similarity(feature_matrix)
 
-    with open(SIM_PATH, 'wb') as f:
-        pickle.dump(similarity, f)
-    logging.info(
-        f"Similarity matrix computed and saved today {datetime.now().strftime("%d-%m-%Y")}."
-        )
+    np.save(SIM_PATH, similarity)
+    logging.info(f"Similarity matrix computed and saved today {datetime.now().strftime('%d-%m-%Y')}.")
+
+if __name__ == "__main__":
+    update_dataset()
+    compute_similarity_matrix()

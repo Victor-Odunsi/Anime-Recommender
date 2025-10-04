@@ -166,58 +166,26 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-HF_DATASET_REPO = "victor-odunsi/anime-recommender-artifacts"
-# --- Artifact fetch with logging ---
-print("📥 Fetching artifacts from Hugging Face...")
+BASE_PATH = "/data"
 
-try:
-    data_path = hf_hub_download(
-        repo_id=HF_DATASET_REPO,
-        filename="anime_data.csv",
-        repo_type="dataset",
-    )
-    print(f"✅ Downloaded anime_data.csv -> {data_path}")
-
-    sim_path = hf_hub_download(
-        repo_id=HF_DATASET_REPO,
-        filename="similarity_matrix.npy",
-        repo_type="dataset",
-    )
-    print(f"✅ Downloaded similarity_matrix.npy -> {sim_path}")
-
-    trending_path = hf_hub_download(
-        repo_id=HF_DATASET_REPO,
-        filename="trending_df.csv",
-        repo_type="dataset",
-    )
-    print(f"✅ Downloaded trending_df.csv -> {trending_path}")
-
-except Exception as e:
-    print("❌ Failed to fetch from Hugging Face:", e)
-    raise
-
-# @st.cache_data
+@st.cache_data
 def _get_anime_data():
-    print(">>> Fetching anime_data.csv from HF...")
-    return pd.read_csv(data_path)
+    return pd.read_csv(f"{BASE_PATH}/anime_data.csv")
 
-# @st.cache_data
+@st.cache_data
 def _get_similarity_matrix():
-    print(">>> Fetching similarity_matrix.npy from HF...")
-    similarity = np.load(sim_path, allow_pickle=True)
-    return similarity
+    return np.load(f"{BASE_PATH}/similarity_matrix.npy", allow_pickle=True)
 
-# @st.cache_data
+@st.cache_data
 def _get_trending_anime():
-    print(">>> Fetching trending_df.csv from HF...")
-    return pd.read_csv(trending_path)
+    return pd.read_csv(f"{BASE_PATH}/trending_df.csv")
 
 @st.cache_resource
 def _load_image(url: str):
     response = requests.get(url)
     return Image.open(BytesIO(response.content))
 
-
+# Load artifacts
 trending_df = _get_trending_anime()
 anime_data = _get_anime_data()
 similarity = _get_similarity_matrix()
