@@ -77,7 +77,7 @@ def update_dataset():
         f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime('%d-%m-%Y')}."
         f" Total entries: {len(combined_df)}"
     )
-    
+
     return combined_df
 
 def _preprocess(text):
@@ -125,9 +125,11 @@ def upload_to_hf():
     files = [DATA_PATH, TRENDING_PATH, MATRIX_PATH]
 
     for f in files:
+        filename = f.name
         print(f"⬆️ Uploading {f} to {HF_REPO}...")
         upload_file(
             path_or_fileobj=str(f),
+            path_in_repo=filename,
             repo_id=HF_REPO,
             repo_type="dataset",
             token=HF_TOKEN
