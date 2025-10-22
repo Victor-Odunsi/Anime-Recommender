@@ -167,15 +167,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-@st.cache_data
+@st.cache_data(ttl = 259200)
 def _get_anime_data():
     return get_anime_data()
 
-@st.cache_data
+@st.cache_data(ttl = 259200)
 def _get_similarity_matrix():
     return get_similarity_matrix()
 
-@st.cache_data
+@st.cache_data(ttl = 259200)
 def _get_trending_anime():
     return get_trending_anime()
 
