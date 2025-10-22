@@ -14,6 +14,12 @@ def download_from_hf(filename: str) -> BytesIO:
     """
     url = f"{HF_BASE}/{filename}"
     print(f"⬇️ Downloading {filename} from Hugging Face…")
+    
+    headers = {}
+    token = os.getenv("HF_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     response = requests.get(url)
     response.raise_for_status()
     return BytesIO(response.content)
