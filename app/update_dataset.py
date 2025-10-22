@@ -21,7 +21,7 @@ BASE_PATH = Path("artifacts")
 BASE_PATH.mkdir(exist_ok=True)
 HF_DATA_BASE = "https://huggingface.co/datasets/victor-odunsi/anime-recommender-artifacts/resolve/main"
 HF_REPO = "victor-odunsi/anime-recommender-artifacts"
-HF_TOKEN = os.getenv("HF_TOKEN")  
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 DATA_PATH = BASE_PATH / "anime_data.csv"
 TRENDING_PATH = BASE_PATH / "trending_df.csv"
@@ -123,6 +123,9 @@ def compute_recommendations(df: pd.DataFrame):
 def upload_to_hf():
     """Upload CSVs to Hugging Face dataset repo"""
     files = [DATA_PATH, TRENDING_PATH, MATRIX_PATH]
+
+    print(f"Uploading to repo_id = {HF_REPO}")
+    print(f"Token found: {'yes' if HF_TOKEN else 'no'}")
 
     for f in files:
         filename = f.name
