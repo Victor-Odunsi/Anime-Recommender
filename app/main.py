@@ -230,7 +230,7 @@ if st.button("✨ Get Recommendations"):
             with col:
                 col.image(
                     recommended_posters[idx],
-                    use_container_width=True,
+                    width='stretch',
                     caption=recommended_names[idx]
                 )
                 col.markdown(
@@ -252,7 +252,7 @@ for idx, col in enumerate(cols):
         img = _load_image(trending_df.iloc[idx]['image_url'])
         st.image(
             img,
-            use_container_width=True,
+            width='stretch',
             caption=trending_df.iloc[idx]['name']
             )
         st.write(
