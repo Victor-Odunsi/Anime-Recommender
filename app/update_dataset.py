@@ -9,6 +9,7 @@ from nltk.stem import PorterStemmer
 from datetime import datetime
 from io import BytesIO
 from huggingface_hub import upload_file
+from fetch_from_hf import get_anime_data
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,14 +60,7 @@ def update_dataset():
 
     new_df = pd.DataFrame(new_anime_list)
 
-    def _load_existing_data():
-        url = HF_DATA_BASE
-        response = requests.get(url)
-        response.raise_for_status()
-        return BytesIO(response.content)
-
-    file_path = _load_existing_data()
-    existing_df = pd.read_csv(file_path)
+    existing_df = get_anime_data()
 
     combined_df = (
         pd.concat([existing_df, new_df])
@@ -83,8 +77,7 @@ def update_dataset():
         f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime('%d-%m-%Y')}."
         f" Total entries: {len(combined_df)}"
     )
-
-
+    
     return combined_df
 
 def _preprocess(text):
