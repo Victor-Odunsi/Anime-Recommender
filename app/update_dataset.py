@@ -10,7 +10,10 @@ from datetime import datetime
 from io import BytesIO
 from huggingface_hub import upload_file
 
-logging.basicConfig(filename='app.log', level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # Persistent path
 BASE_PATH = Path("artifacts")
@@ -80,6 +83,7 @@ def update_dataset():
         f"Dataset updated with {len(new_df)} new entries today {datetime.now().strftime('%d-%m-%Y')}."
         f" Total entries: {len(combined_df)}"
     )
+
 
     return combined_df
 
